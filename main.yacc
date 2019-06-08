@@ -67,7 +67,6 @@ linguas     : STRING {g_hash_table_add(linguas,$1);} linguas
             
 conceitos   : conceito conceitos          {$$ = g_list_prepend($2,$1);}
             | '\n' conceitos              {$$ = $2;}            
-            | LINEBREAK conceitos         {$$ = $2;}            
             |                             {$$ = NULL;}            
             ;
 
@@ -94,7 +93,7 @@ ligacoes    : STRING termos '\n' ligacoes       {
                                                       termos = g_list_concat(termos,$2);
                                                       g_hash_table_replace(hash,$1,termos);
                                                       $$ = $4;
-                                                };
+                                                }
             |                                  {
                                                       Pair p = malloc(sizeof(struct pair));
                                                       p->a1 = g_hash_table_new(g_str_hash,g_str_equal); 
