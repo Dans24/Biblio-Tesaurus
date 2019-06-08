@@ -18,7 +18,7 @@
  typedef struct conceito{
       String termobase;
       GHashTable *ligacoes; //Hash table com chave(Def) e Valor Lista de Termos 
-      String scopenote;
+      GList* scopenote;
  }    *Conceito;
 %}
 
@@ -32,8 +32,8 @@
       Conceito c;
       }
 
-%type <s> HEAD STRING LING REL scopenote note
-%type <list> termos conceitos 
+%type <s> HEAD STRING LING REL 
+%type <list> termos conceitos scopenote note
 %type <hash> ligacoes
 %type <c> conceito
 %%
@@ -93,36 +93,16 @@ ligacoes    : '\n' STRING termos ligacoes       {
 
 
 scopenote   :   SCOPENOTE note            {$$ = $2;}
-            |                             {$$ = "";}     
+            |                             {$$ = NULL;}     
             ;
 
 note        : STRING note                 {
-                                                int len1 = strlen($1);
-                                                int len2 = strlen($2);
-                                                int lentot = len1+len2+2; 
-                                                $$ = malloc(lentot*sizeof(char));
-                                                $$[0] = '\0';                                                
-                                                strcat($$,$1);
-                                                $$[len1] = ' ';
-                                                $$[len1+1] = '\0';
-                                                strcat($$,$2);
-                                                free($1);
-                                                free($2);
+                                                $$ = g_list_prepend($2,$1);
                                           }
             | '\n' STRING note            {
-                                                int len1 = strlen($2);
-                                                int len2 = strlen($3);
-                                                int lentot = len1+len2+2; 
-                                                $$ = malloc(lentot*sizeof(char));
-                                                $$[0] = '\0';
-                                                strcat($$,$2);
-                                                $$[len1] = ' ';
-                                                $$[len1+1] = '\0';
-                                                strcat($$,$3);
-                                                free($2);
-                                                free($3);
-            }
-            | '\n'                        {$$ = malloc(1);$$[0]='\0';}
+                                                $$ = g_list_prepend($3,$2);
+                                          }
+            | '\n'                        {$$ = NULL;}
             ;
             
 termos      : STRING    {$$ = g_list_prepend(NULL,$1);}
