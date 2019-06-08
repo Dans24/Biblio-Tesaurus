@@ -97,7 +97,6 @@ ligacoes    : STRING termos '\n' ligacoes       {
                                                       g_hash_table_replace(hash,$1,termos);
                                                       $$ = $4;
                                                 };
-            /*TODO: Adicionar SCOPENOTE*/
             |                                  {
                                                       Pair p = malloc(sizeof(struct pair));
                                                       p->a1 = g_hash_table_new(g_str_hash,g_str_equal); 
