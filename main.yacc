@@ -1,12 +1,11 @@
 %{
  #define _GNU_SOURCE
  #include <stdio.h>
- int yyerror(char *s){ fprintf(stderr,"Erro: %s\n",s);}
  int yylex();
  #include <gmodule.h>
  GHashTable *linguas;
  GList *relacoes;
- 
+ int yyerror(char *s);
  char *baselang;
  typedef struct pair{
       void* a1;
@@ -24,7 +23,7 @@
 %}
 
 
-%token  HEAD STRING LING REL LANGUAGE BASELANG INV SCOPENOTE;
+%token  HEAD STRING LING REL LANGUAGE BASELANG INV SCOPENOTE LINEBREAK;
 %union{ 
       char* s;
       GList *list;
@@ -67,36 +66,39 @@ linguas     : STRING {g_hash_table_add(linguas,$1);} linguas
             ;
             
 conceitos   : conceito '\n' conceitos        {$$ = g_list_prepend($3,$1);}
+            | conceito LINEBREAK conceitos        {$$ = g_list_prepend($3,$1);}
             | conceito                       {$$ = g_list_prepend(NULL,$1);}
+            | '\n' conceitos                 {$$ = $2;}            
+            | LINEBREAK conceitos            {$$ = $2;}            
             |                                {$$ = NULL;}            
             ;
 
-conceito    :     STRING ligacoes scopenote  {
+conceito    :     STRING '\n' ligacoes scopenote  {
                                           Conceito c = malloc(sizeof(struct conceito));
                                           c->termobase = $1;
-                                          c->ligacoes = $2->a1;
-                                          c->ligacoes = $2->a2;
-                                          c->scopenote = $3;
+                                          c->ligacoes = $3->a1;
+                                          c->ligacoes = $3->a2;
+                                          c->scopenote = $4;
                                           $$ = c;
                                     }
             ;
 
       /* 1ª elemento identificador 2º elemento termos */
       /* Par de Hash's primeira com as traduções, segunda com as relações Hashes são chave->lista*/
-ligacoes    : '\n' STRING termos ligacoes       {
+ligacoes    : STRING termos '\n' ligacoes       {
                                                       //Código para escrever coisas
                                                       GHashTable* hash;
-                                                      if(g_hash_table_contains(linguas,$2))
+                                                      if(g_hash_table_contains(linguas,$1))
                                                             hash = $4->a1;    //Hash das Linguas
                                                       else 
                                                             hash = $4->a2;    //Hash dos termos 
-                                                      GList* termos = g_hash_table_lookup(hash,$2);
-                                                      termos = g_list_concat(termos,$3);
-                                                      g_hash_table_replace(hash,$2,termos);
+                                                      GList* termos = g_hash_table_lookup(hash,$1);
+                                                      termos = g_list_concat(termos,$2);
+                                                      g_hash_table_replace(hash,$1,termos);
                                                       $$ = $4;
                                                 };
             /*TODO: Adicionar SCOPENOTE*/
-            | '\n'                              {
+            |                                  {
                                                       Pair p = malloc(sizeof(struct pair));
                                                       p->a1 = g_hash_table_new(g_str_hash,g_str_equal); 
                                                       p->a2 = g_hash_table_new(g_str_hash,g_str_equal); 
@@ -105,28 +107,29 @@ ligacoes    : '\n' STRING termos ligacoes       {
             ;
 
 
-scopenote   :   SCOPENOTE note            {$$ = $2;}
-            |                             {$$ = NULL;}     
+scopenote   :   SCOPENOTE note '\n'             {$$ = $2;}
+            |                                   {$$ = NULL;}     
             ;
 
 note        : STRING note                 {
                                                 $$ = g_list_prepend($2,$1);
                                           }
-            | '\n' STRING note            {
+            | LINEBREAK STRING note            {
                                                 $$ = g_list_prepend($3,$2);
                                           }
-            | '\n'                        {$$ = NULL;}
+            |                             {$$ = NULL;}
             ;
             
 termos      : STRING    {$$ = g_list_prepend(NULL,$1);}
             | STRING ',' termos     {$$ = g_list_prepend($3,$1);}
-            | STRING ',' '\n' termos     {$$ = g_list_prepend($4,$1);}
+            | STRING ',' LINEBREAK termos     {$$ = g_list_prepend($4,$1);}
             ;
 
 
 
 %%
 #include "lex.yy.c"
+int yyerror(char *s){ fprintf(stderr,"Erro: %s at line %d: %s \n",s,yylineno,yytext);}
 
 int main(){
    relacoes = NULL;

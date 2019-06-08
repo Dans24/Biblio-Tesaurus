@@ -13,7 +13,7 @@ SN                                  {
 %language                           {return LANGUAGE;}
 %baselang                           {return BASELANG;}
 %inv                                {return INV;}
-
+\n\ +                               {return LINEBREAK;}
  
     /*TIPOS atómicos*/
 
