@@ -18,6 +18,7 @@
  typedef struct conceito{
       String termobase;
       GList *ligacoes;
+      String scopenote;
  }    *Conceito;
 %}
 
@@ -30,7 +31,7 @@
       Conceito c;
       }
 
-%type <s> HEAD STRING LING REL 
+%type <s> HEAD STRING LING REL scopenote note
 %type <list> termos conceitos  ligacoes
 %type <c> conceito
 %%
@@ -59,13 +60,14 @@ linguas     : STRING {g_hash_table_add(linguas,$1);} linguas
             
 conceitos   : conceito '\n' conceitos        {$$ = g_list_prepend($3,$1);}
             | conceito                       {$$ = g_list_prepend(NULL,$1);}
-            |                                   {$$ = NULL;}            
+            |                                {$$ = NULL;}            
             ;
 
-conceito    :     STRING ligacoes   {
+conceito    :     STRING ligacoes scopenote  {
                                           Conceito c = malloc(sizeof(struct conceito));
                                           c->termobase = $1;
                                           c->ligacoes = $2;
+                                          c->scopenote = $3;
                                           $$ = c;
                                     }
             ;
@@ -79,9 +81,43 @@ ligacoes    : '\n' STRING termos ligacoes       {
                                                       $$ = g_list_prepend($4,p);
                                                 };
             /*TODO: Adicionar SCOPENOTE*/
-            |  '\n'                             {$$ = NULL;}      /*Para o caso em que n tem linhas*/
+            | '\n'                              {$$ = NULL;}      /*Para o caso em que n tem linhas*/
             ;
-          
+
+
+scopenote   :   SCOPENOTE note            {$$ = $2;}
+            |                             {$$ = "";}     
+            ;
+
+note        : STRING note                 {
+                                                int len1 = strlen($1);
+                                                int len2 = strlen($2);
+                                                int lentot = len1+len2+2; 
+                                                $$ = malloc(lentot*sizeof(char));
+                                                $$[0] = '\0';                                                
+                                                strcat($$,$1);
+                                                $$[len1] = ' ';
+                                                $$[len1+1] = '\0';
+                                                strcat($$,$2);
+                                                free($1);
+                                                free($2);
+                                          }
+            | '\n' STRING note            {
+                                                int len1 = strlen($2);
+                                                int len2 = strlen($3);
+                                                int lentot = len1+len2+2; 
+                                                $$ = malloc(lentot*sizeof(char));
+                                                $$[0] = '\0';
+                                                strcat($$,$2);
+                                                $$[len1] = ' ';
+                                                $$[len1+1] = '\0';
+                                                strcat($$,$3);
+                                                free($2);
+                                                free($3);
+            }
+            | '\n'                        {$$ = malloc(1);$$[0]='\0';}
+            ;
+            
 termos      : STRING    {$$ = g_list_prepend(NULL,$1);}
             | STRING ',' termos     {$$ = g_list_prepend($3,$1);}
             | STRING ',' '\n' termos     {$$ = g_list_prepend($4,$1);}
