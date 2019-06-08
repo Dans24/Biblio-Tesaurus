@@ -17,6 +17,7 @@
 
  typedef struct conceito{
       String termobase;
+      GHashTable *traducoes; //Hash table com chave(Def) e Valor Lista de Termos 
       GHashTable *ligacoes; //Hash table com chave(Def) e Valor Lista de Termos 
       GList* scopenote;
  }    *Conceito;
@@ -34,7 +35,7 @@
 
 %type <s> HEAD STRING LING REL 
 %type <list> termos conceitos scopenote note
-%type <hash> ligacoes
+%type <par> ligacoes
 %type <c> conceito
 %%
       /*Axioma:*/
@@ -73,22 +74,34 @@ conceitos   : conceito '\n' conceitos        {$$ = g_list_prepend($3,$1);}
 conceito    :     STRING ligacoes scopenote  {
                                           Conceito c = malloc(sizeof(struct conceito));
                                           c->termobase = $1;
-                                          c->ligacoes = $2;
+                                          c->ligacoes = $2->a1;
+                                          c->ligacoes = $2->a2;
                                           c->scopenote = $3;
                                           $$ = c;
                                     }
             ;
 
       /* 1ª elemento identificador 2º elemento termos */
+      /* Par de Hash's primeira com as traduções, segunda com as relações Hashes são chave->lista*/
 ligacoes    : '\n' STRING termos ligacoes       {
                                                       //Código para escrever coisas
-                                                      GList* termos = g_hash_table_lookup($4,$2);
+                                                      GHashTable* hash;
+                                                      if(g_hash_table_contains(linguas,$2))
+                                                            hash = $4->a1;    //Hash das Linguas
+                                                      else 
+                                                            hash = $4->a2;    //Hash dos termos 
+                                                      GList* termos = g_hash_table_lookup(hash,$2);
                                                       termos = g_list_concat(termos,$3);
-                                                      g_hash_table_replace($4,$2,termos);
+                                                      g_hash_table_replace(hash,$2,termos);
                                                       $$ = $4;
                                                 };
             /*TODO: Adicionar SCOPENOTE*/
-            | '\n'                              {$$ = g_hash_table_new(g_str_hash,g_str_equal);}      /*Para o caso em que n tem linhas*/
+            | '\n'                              {
+                                                      Pair p = malloc(sizeof(struct pair));
+                                                      p->a1 = g_hash_table_new(g_str_hash,g_str_equal); 
+                                                      p->a2 = g_hash_table_new(g_str_hash,g_str_equal); 
+                                                      $$ = p;
+                                                }      /*Para o caso em que n tem linhas*/
             ;
 
 
