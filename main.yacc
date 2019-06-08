@@ -65,20 +65,18 @@ linguas     : STRING {g_hash_table_add(linguas,$1);} linguas
             |           {}
             ;
             
-conceitos   : conceito '\n' conceitos        {$$ = g_list_prepend($3,$1);}
-            | conceito LINEBREAK conceitos        {$$ = g_list_prepend($3,$1);}
-            | conceito                       {$$ = g_list_prepend(NULL,$1);}
-            | '\n' conceitos                 {$$ = $2;}            
-            | LINEBREAK conceitos            {$$ = $2;}            
-            |                                {$$ = NULL;}            
+conceitos   : conceito conceitos          {$$ = g_list_prepend($2,$1);}
+            | '\n' conceitos              {$$ = $2;}            
+            | LINEBREAK conceitos         {$$ = $2;}            
+            |                             {$$ = NULL;}            
             ;
 
-conceito    :     STRING '\n' ligacoes scopenote  {
+conceito    :     '\n' STRING '\n' ligacoes scopenote  {
                                           Conceito c = malloc(sizeof(struct conceito));
-                                          c->termobase = $1;
-                                          c->ligacoes = $3->a1;
-                                          c->ligacoes = $3->a2;
-                                          c->scopenote = $4;
+                                          c->termobase = $2;
+                                          c->traducoes = $4->a1;
+                                          c->ligacoes = $4->a2;
+                                          c->scopenote = $5;
                                           $$ = c;
                                     }
             ;
