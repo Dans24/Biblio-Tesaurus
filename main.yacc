@@ -17,7 +17,7 @@
 
  typedef struct conceito{
       String termobase;
-      GList *ligacoes;
+      GHashTable *ligacoes; //Hash table com chave(Def) e Valor Lista de Termos 
       String scopenote;
  }    *Conceito;
 %}
@@ -27,16 +27,22 @@
 %union{ 
       char* s;
       GList *list;
+      GHashTable *hash;
       Pair par;
       Conceito c;
       }
 
 %type <s> HEAD STRING LING REL scopenote note
-%type <list> termos conceitos  ligacoes
+%type <list> termos conceitos 
+%type <hash> ligacoes
 %type <c> conceito
 %%
+      /*Axioma:*/
+thesaurus   : metadados '\n' conceitos    {
+                                                //Código para escrever coisas;
+                                                //Conceitos é uma lista com Conceito
 
-thesaurus   : metadados '\n' conceitos
+                                          }
             |
             ;
 
@@ -44,6 +50,7 @@ metadados   : metadado '\n' metadados
             |
             ;
 
+            /*Metadados:  */
 metadado    : LANGUAGE linguas            
             | BASELANG STRING             {baselang = $2;}
             | INV STRING STRING           {
@@ -75,13 +82,13 @@ conceito    :     STRING ligacoes scopenote  {
       /* 1ª elemento identificador 2º elemento termos */
 ligacoes    : '\n' STRING termos ligacoes       {
                                                       //Código para escrever coisas
-                                                      Pair p = malloc(sizeof(struct pair));
-                                                      p->a1 = $2;
-                                                      p->a2 = $3;
-                                                      $$ = g_list_prepend($4,p);
+                                                      GList* termos = g_hash_table_lookup($4,$2);
+                                                      termos = g_list_concat(termos,$3);
+                                                      g_hash_table_replace($4,$2,termos);
+                                                      $$ = $4;
                                                 };
             /*TODO: Adicionar SCOPENOTE*/
-            | '\n'                              {$$ = NULL;}      /*Para o caso em que n tem linhas*/
+            | '\n'                              {$$ = g_hash_table_new(g_str_hash,g_str_equal);}      /*Para o caso em que n tem linhas*/
             ;
 
 
@@ -126,10 +133,11 @@ termos      : STRING    {$$ = g_list_prepend(NULL,$1);}
 
 
 %%
- #include "lex.yy.c"
+#include "lex.yy.c"
+
 int main(){
    relacoes = NULL;
-   linguas = g_hash_table_new(g_str_hash,NULL);
+   linguas = g_hash_table_new(g_str_hash,g_str_equal);
    yyparse();
    return 0;
 }
