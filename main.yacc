@@ -18,12 +18,11 @@
       String termobase;
       GHashTable *traducoes; //Hash table com chave(Def) e Valor Lista de Termos 
       GHashTable *ligacoes; //Hash table com chave(Def) e Valor Lista de Termos 
-      GList* scopenote;
  }    *Conceito;
 %}
 
 
-%token  HEAD STRING LING REL LANGUAGE BASELANG INV SCOPENOTE LINEBREAK;
+%token  HEAD STRING LING REL LANGUAGE BASELANG INV LINEBREAK;
 %union{ 
       char* s;
       GList *list;
@@ -33,7 +32,7 @@
       }
 
 %type <s> HEAD STRING LING REL 
-%type <list> termos conceitos scopenote note
+%type <list> termos conceitos note list     
 %type <par> ligacoes
 %type <c> conceito
 %%
@@ -101,19 +100,18 @@ conceitos   : conceito conceitos          {$$ = g_list_prepend($2,$1);}
             |                             {$$ = NULL;}            
             ;
 
-conceito    :     '\n' STRING '\n' ligacoes scopenote  {
+conceito    :     '\n' STRING '\n' ligacoes {
                                           Conceito c = malloc(sizeof(struct conceito));
                                           c->termobase = $2;
                                           c->traducoes = $4->a1;
                                           c->ligacoes = $4->a2;
-                                          c->scopenote = $5;
                                           $$ = c;
                                     }
             ;
 
       /* 1ª elemento identificador 2º elemento termos */
       /* Par de Hash's primeira com as traduções, segunda com as relações Hashes são chave->lista*/
-ligacoes    : STRING termos '\n' ligacoes       {
+ligacoes    : STRING list '\n' ligacoes         {
                                                       //Código para escrever coisas
                                                       GHashTable* hash;
                                                       if(g_hash_table_contains(linguas,$1))
@@ -134,8 +132,8 @@ ligacoes    : STRING termos '\n' ligacoes       {
             ;
 
 
-scopenote   :   SCOPENOTE note '\n'             {$$ = $2;}
-            |                                   {$$ = NULL;}     
+list        : STRING note                  {$$ = g_list_prepend($2,$1);}
+            | STRING termos                {$$ = g_list_prepend($2,$1);}
             ;
 
 note        : STRING note                 {
@@ -147,9 +145,10 @@ note        : STRING note                 {
             |                             {$$ = NULL;}
             ;
             
-termos      : STRING    {$$ = g_list_prepend(NULL,$1);}
-            | STRING ',' termos     {$$ = g_list_prepend($3,$1);}
-            | STRING ',' LINEBREAK termos     {$$ = g_list_prepend($4,$1);}
+termos      : ',' STRING    {$$ = g_list_prepend(NULL,$2);}
+            | ',' LINEBREAK STRING      {$$ = g_list_prepend(NULL,$3);}            
+            | ',' STRING termos     {$$ = g_list_prepend($3,$2);}
+            | ',' LINEBREAK STRING termos     {$$ = g_list_prepend($4,$3);}
             ;
 
 

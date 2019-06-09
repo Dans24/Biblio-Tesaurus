@@ -4,17 +4,14 @@
 %%
 
 #.*                                 {}
-    /* Deteta inicio das linhas nos conceitos*/
-SN                                  {
-                                        return SCOPENOTE;
-                                    }
+
 
     /*palavras reservadas para os metadados*/
 %language                           {return LANGUAGE;}
 %baselang                           {return BASELANG;}
 %inv                                {return INV;}
 \n\ *#.*                            {return '\n';}
-\n\ +/[^ \n]                         {return LINEBREAK;}
+\n\ +/[^ \n]                        {return LINEBREAK;}
  
     /*TIPOS atómicos*/
 
