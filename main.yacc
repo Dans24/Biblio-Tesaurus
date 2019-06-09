@@ -132,7 +132,7 @@ ligacoes    : STRING list '\n' ligacoes         {
                                                       else 
                                                             hash = $4->a2;    //Hash dos termos 
                                                       GList* termos = g_hash_table_lookup(hash,$1);
-                                                      termos = g_list_concat(termos,$2);
+                                                      termos = g_list_concat($2,termos);
                                                       g_hash_table_replace(hash,$1,termos);
                                                       $$ = $4;
                                                 }
