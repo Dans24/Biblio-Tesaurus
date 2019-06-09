@@ -4,6 +4,7 @@
  int yylex();
  #include <gmodule.h>
  GHashTable *linguas;
+ GHashTable *description;
  GHashTable *externs; //deve ser interpretado como texto
  GList *relacoes;
  int yyerror(char *s);
@@ -23,7 +24,7 @@
 %}
 
 
-%token  HEAD STRING LING REL LANGUAGE EXTERN BASELANG INV LINEBREAK;
+%token  HEAD STRING LING REL LANGUAGE EXTERN DESC BASELANG INV LINEBREAK;
 %union{ 
       char* s;
       GList *list;
@@ -59,12 +60,18 @@ thesaurus   : metadados  conceitos        {
                                                       printf("\nTermo Base: %s\n", (char*) data->termobase);
                                                       g_hash_table_iter_init (&iter, data->traducoes);
                                                       while (g_hash_table_iter_next (&iter, &key, &value)) {
-                                                            printf("Tradução: %s %s\n", (char *) key, (char *)((GList*)value)->data);
+                                                            char * keyName =  g_hash_table_lookup(description,key);
+                                                            if(keyName == NULL)
+                                                                  keyName = (char *) key;
+                                                            printf("Tradução: %s %s\n", keyName, (char *)((GList*)value)->data);
                                                       }
                                                       g_hash_table_iter_init (&iter, data->ligacoes);
                                                       while (g_hash_table_iter_next (&iter, &key, &value)) {
+                                                            char * keyName =  g_hash_table_lookup(description,key);
+                                                            if(keyName == NULL)
+                                                                  keyName = (char *) key;
                                                             if(g_hash_table_contains(externs,key)){
-                                                                  printf("%s: %s ",(char*) key, (char *)((GList*)value)->data);
+                                                                  printf("%s: %s ",keyName, (char *)((GList*)value)->data);
                                                                   for (GList* l = ((GList*)value)->next; l != NULL; l = l->next) {
                                                                         printf("%s ", (char*)l->data);
                                                                   }
@@ -72,7 +79,7 @@ thesaurus   : metadados  conceitos        {
                                                             }
                                                             else
                                                                   for (GList* l = value; l != NULL; l = l->next) {
-                                                                        printf("Ligações: %s %s\n", (char *) key, (char *) l->data);
+                                                                        printf("Ligações: %s %s\n", keyName, (char *) l->data);
                                                                   }
                                                       }
                                                 }
@@ -88,6 +95,7 @@ metadados   : metadado '\n' metadados
 metadado    : LANGUAGE linguas            
             | BASELANG STRING             {baselang = $2;}
             | EXTERN  STRING              {g_hash_table_add(externs,$2);}
+            | DESC STRING STRING                {g_hash_table_replace(description,$2,$3);}
             | INV STRING STRING           {
                                                 Pair par= malloc(sizeof(struct pair));
                                                 par->a1 = $2;
@@ -165,6 +173,7 @@ int yyerror(char *s){ fprintf(stderr,"Erro: %s at line %d: %s \n",s,yylineno,yyt
 int main(){
    relacoes = NULL;
    linguas = g_hash_table_new(g_str_hash,g_str_equal);
+   description = g_hash_table_new(g_str_hash,g_str_equal);
    externs = g_hash_table_new(g_str_hash,g_str_equal);
    g_hash_table_add(externs,"SN");
    yyparse();

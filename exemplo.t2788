@@ -2,6 +2,9 @@
 %baselang EN                  # língua de base: EN
 %inv NT BT                    # NT, BT são relações inversas a NT B => b BT a
 %extern TXT
+%description TXT Texto
+%description NT "Narrow Term"
+%description SN "Scope Note"
 
                               # conceitos:
 animal                        # termo na baselang

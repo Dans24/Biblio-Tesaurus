@@ -9,6 +9,7 @@
     /*palavras reservadas para os metadados*/
 %extern                             {return EXTERN;}
 %language                           {return LANGUAGE;}
+%description                        {return DESC;}
 %baselang                           {return BASELANG;}
 %inv                                {return INV;}
 \n\ *#.*                            {return '\n';}
