@@ -5,6 +5,7 @@
 %description TXT Texto
 %description NT "Narrow Term"
 %description SN "Scope Note"
+%description PT "Português"
 
                               # conceitos:
 animal                        # termo na baselang
