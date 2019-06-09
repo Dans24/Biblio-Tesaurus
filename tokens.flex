@@ -7,6 +7,7 @@
 
 
     /*palavras reservadas para os metadados*/
+%extern                             {return EXTERN;}
 %language                           {return LANGUAGE;}
 %baselang                           {return BASELANG;}
 %inv                                {return INV;}

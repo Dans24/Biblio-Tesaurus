@@ -4,6 +4,7 @@
  int yylex();
  #include <gmodule.h>
  GHashTable *linguas;
+ GHashTable *externs; //deve ser interpretado como texto
  GList *relacoes;
  int yyerror(char *s);
  char *baselang;
@@ -22,7 +23,7 @@
 %}
 
 
-%token  HEAD STRING LING REL LANGUAGE BASELANG INV LINEBREAK;
+%token  HEAD STRING LING REL LANGUAGE EXTERN BASELANG INV LINEBREAK;
 %union{ 
       char* s;
       GList *list;
@@ -62,8 +63,8 @@ thesaurus   : metadados  conceitos        {
                                                       }
                                                       g_hash_table_iter_init (&iter, data->ligacoes);
                                                       while (g_hash_table_iter_next (&iter, &key, &value)) {
-                                                            if(g_str_equal(key,"SN")){
-                                                                  printf("ScopeNote: %s ", (char *)((GList*)value)->data);
+                                                            if(g_hash_table_contains(externs,key)){
+                                                                  printf("%s: %s ",(char*) key, (char *)((GList*)value)->data);
                                                                   for (GList* l = ((GList*)value)->next; l != NULL; l = l->next) {
                                                                         printf("%s ", (char*)l->data);
                                                                   }
@@ -86,6 +87,7 @@ metadados   : metadado '\n' metadados
             /*Metadados:  */
 metadado    : LANGUAGE linguas            
             | BASELANG STRING             {baselang = $2;}
+            | EXTERN  STRING              {g_hash_table_add(externs,$2);}
             | INV STRING STRING           {
                                                 Pair par= malloc(sizeof(struct pair));
                                                 par->a1 = $2;
@@ -163,6 +165,8 @@ int yyerror(char *s){ fprintf(stderr,"Erro: %s at line %d: %s \n",s,yylineno,yyt
 int main(){
    relacoes = NULL;
    linguas = g_hash_table_new(g_str_hash,g_str_equal);
+   externs = g_hash_table_new(g_str_hash,g_str_equal);
+   g_hash_table_add(externs,"SN");
    yyparse();
    return 0;
 }
