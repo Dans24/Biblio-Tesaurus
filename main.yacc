@@ -41,7 +41,38 @@
 thesaurus   : metadados '\n' conceitos    {
                                                 //Código para escrever coisas;
                                                 //Conceitos é uma lista com Conceito
+                                                GHashTableIter iter;
+                                                gpointer key, value;
 
+                                                g_hash_table_iter_init (&iter, linguas);
+                                                while (g_hash_table_iter_next (&iter, &key, &value)) {
+                                                      printf("%s %s\n", (char *) key, (char *) value);
+                                                }
+
+                                                for (GList* l = relacoes; l != NULL; l = l->next) {
+                                                      Pair data = (Pair) l->data;
+                                                      printf("%s %s\n", (char*) data->a1, (char*) data->a2);
+                                                }
+
+                                                for (GList* l = $3; l != NULL; l = l->next) {
+                                                      Conceito data = (Conceito) l->data;
+                                                      printf("Termo Base: %s\n", (char*) data->termobase);
+                                                      g_hash_table_iter_init (&iter, data->traducoes);
+                                                      while (g_hash_table_iter_next (&iter, &key, &value)) {
+                                                            printf("Tradução: %s %s\n", (char *) key, (char *) value);
+                                                      }
+                                                      g_hash_table_iter_init (&iter, data->traducoes);
+                                                      while (g_hash_table_iter_next (&iter, &key, &value)) {
+                                                            for (GList* l = value; l != NULL; l = l->next) {
+                                                                  printf("Ligações: %s %s\n", (char *) key, (char *) value);
+                                                            }
+                                                      }
+                                                      for (GList* l = data->scopenote; l != NULL; l = l->next) {
+                                                            char* data = l->data;
+                                                            printf("Nota: %s\n", data);
+                                                      }
+                                                      printf("\n");
+                                                }
                                           }
             |
             ;
