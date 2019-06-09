@@ -21,6 +21,8 @@
       GHashTable *traducoes; //Hash table com chave(Def) e Valor Lista de Termos 
       GHashTable *ligacoes; //Hash table com chave(Def) e Valor Lista de Termos 
  }    *Conceito;
+ void printPostIndex(FILE* f);
+ void printPreIndex(FILE* f);
 %}
 
 
@@ -44,7 +46,10 @@ thesaurus   : metadados  conceitos        {
                                                 //Conceitos é uma lista com Conceito
                                                 GHashTableIter iter;
                                                 gpointer key, value;
-
+                                                FILE * indexF;
+                                                indexF = fopen("index.html","w");
+                                                printPreIndex(indexF);
+                                                
                                                 g_hash_table_iter_init (&iter, linguas);
                                                 while (g_hash_table_iter_next (&iter, &key, &value)) {
                                                       printf("%s %s\n", (char *) key, (char *) value);
@@ -57,13 +62,18 @@ thesaurus   : metadados  conceitos        {
 
                                                 for (GList* l = $2; l != NULL; l = l->next) {
                                                       Conceito data = (Conceito) l->data;
-                                                      printf("\nTermo Base: %s\n", (char*) data->termobase);
+                                                      fprintf(indexF,"\n<option>%s</option>",data->termobase);
+                                                      char filepath[200] = {0}; strcat(filepath,data->termobase);strcat(filepath,".html");
+                                                      FILE* page = fopen(filepath,"w");
+                                                      
+                                                      fprintf(page,"<h1>%s</h1>",data->termobase);
+
                                                       g_hash_table_iter_init (&iter, data->traducoes);
                                                       while (g_hash_table_iter_next (&iter, &key, &value)) {
                                                             char * keyName =  g_hash_table_lookup(description,key);
                                                             if(keyName == NULL)
                                                                   keyName = (char *) key;
-                                                            printf("Tradução: %s %s\n", keyName, (char *)((GList*)value)->data);
+                                                            fprintf(page,"<p>Tradução: %s %s</p>\n", keyName, (char *)((GList*)value)->data);
                                                       }
                                                       g_hash_table_iter_init (&iter, data->ligacoes);
                                                       while (g_hash_table_iter_next (&iter, &key, &value)) {
@@ -71,18 +81,20 @@ thesaurus   : metadados  conceitos        {
                                                             if(keyName == NULL)
                                                                   keyName = (char *) key;
                                                             if(g_hash_table_contains(externs,key)){
-                                                                  printf("%s: %s ",keyName, (char *)((GList*)value)->data);
+                                                                  fprintf(page,"<p>%s: %s",keyName, (char *)((GList*)value)->data);
                                                                   for (GList* l = ((GList*)value)->next; l != NULL; l = l->next) {
-                                                                        printf("%s ", (char*)l->data);
+                                                                        fprintf(page," %s", (char*)l->data);
                                                                   }
-                                                                  printf("\n");
+                                                                  fprintf(page,"</p>\n");
                                                             }
                                                             else
                                                                   for (GList* l = value; l != NULL; l = l->next) {
-                                                                        printf("Ligações: %s %s\n", keyName, (char *) l->data);
+                                                                        fprintf(page,"<p>Ligações: %s %s</p>\n", keyName, (char *) l->data);
                                                                   }
                                                       }
+                                                      fclose(page);
                                                 }
+                                                printPostIndex(indexF);
                                           }
             |
             ;
@@ -169,6 +181,17 @@ termos      : ',' STRING    {$$ = g_list_prepend(NULL,$2);}
 %%
 #include "lex.yy.c"
 int yyerror(char *s){ fprintf(stderr,"Erro: %s at line %d: %s \n",s,yylineno,yytext);}
+
+
+void printPreIndex(FILE* f){
+      fprintf(f,"<head><meta charset=\"utf-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"><link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\"><script src=\"https://code.jquery.com/jquery-1.10.2.js\"></script><title>Biblio-Thesarus</title></head><script>$( document ).ready(function() {$( \"#stuff\" ).change(function (){$(\"#frame\").attr(\"src\",$(this).val()+\".html\");});});</script>");
+      fprintf(f,"<div class=\"container\"><div><h1>Biblio-Thesarus</h1><select id=\"stuff\" class=\"form-control\" data-show-subtext=\"true\" data-live-search=\"true\">");
+}
+
+void printPostIndex(FILE* f){
+      fprintf(f,"</select></div><br/><div class=\"embed-responsive embed-responsive-16by9\"><iframe id=\"frame\" class=\"embed-responsive-item\" src=\"\" allowfullscreen></iframe></div></div>");
+      fclose(f);
+}
 
 int main(){
    relacoes = NULL;
