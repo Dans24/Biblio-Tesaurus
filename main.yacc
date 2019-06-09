@@ -37,7 +37,7 @@
 %type <c> conceito
 %%
       /*Axioma:*/
-thesaurus   : metadados '\n' conceitos    {
+thesaurus   : metadados  conceitos        {
                                                 //Código para escrever coisas;
                                                 //Conceitos é uma lista com Conceito
                                                 GHashTableIter iter;
@@ -53,7 +53,7 @@ thesaurus   : metadados '\n' conceitos    {
                                                       printf("%s %s\n", (char*) data->a1, (char*) data->a2);
                                                 }
 
-                                                for (GList* l = $3; l != NULL; l = l->next) {
+                                                for (GList* l = $2; l != NULL; l = l->next) {
                                                       Conceito data = (Conceito) l->data;
                                                       printf("\nTermo Base: %s\n", (char*) data->termobase);
                                                       g_hash_table_iter_init (&iter, data->traducoes);
@@ -80,7 +80,7 @@ thesaurus   : metadados '\n' conceitos    {
             ;
 
 metadados   : metadado '\n' metadados 
-            |
+            | '\n'
             ;
 
             /*Metadados:  */
@@ -98,16 +98,16 @@ linguas     : STRING {g_hash_table_add(linguas,$1);} linguas
             |           {}
             ;
             
-conceitos   : conceito conceitos          {$$ = g_list_prepend($2,$1);}
+conceitos   : conceito '\n' conceitos          {$$ = g_list_prepend($3,$1);}
             | '\n' conceitos              {$$ = $2;}            
             |                             {$$ = NULL;}            
             ;
 
-conceito    :     '\n' STRING '\n' ligacoes {
+conceito    :     STRING '\n' ligacoes {
                                           Conceito c = malloc(sizeof(struct conceito));
-                                          c->termobase = $2;
-                                          c->traducoes = $4->a1;
-                                          c->ligacoes = $4->a2;
+                                          c->termobase = $1;
+                                          c->traducoes = $3->a1;
+                                          c->ligacoes = $3->a2;
                                           $$ = c;
                                     }
             ;
