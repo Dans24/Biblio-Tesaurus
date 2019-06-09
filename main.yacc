@@ -55,22 +55,25 @@ thesaurus   : metadados '\n' conceitos    {
 
                                                 for (GList* l = $3; l != NULL; l = l->next) {
                                                       Conceito data = (Conceito) l->data;
-                                                      printf("Termo Base: %s\n", (char*) data->termobase);
+                                                      printf("\nTermo Base: %s\n", (char*) data->termobase);
                                                       g_hash_table_iter_init (&iter, data->traducoes);
                                                       while (g_hash_table_iter_next (&iter, &key, &value)) {
-                                                            printf("Tradução: %s %s\n", (char *) key, (char *) value);
+                                                            printf("Tradução: %s %s\n", (char *) key, (char *)((GList*)value)->data);
                                                       }
-                                                      g_hash_table_iter_init (&iter, data->traducoes);
+                                                      g_hash_table_iter_init (&iter, data->ligacoes);
                                                       while (g_hash_table_iter_next (&iter, &key, &value)) {
-                                                            for (GList* l = value; l != NULL; l = l->next) {
-                                                                  printf("Ligações: %s %s\n", (char *) key, (char *) value);
+                                                            if(g_str_equal(key,"SN")){
+                                                                  printf("ScopeNote: %s ", (char *)((GList*)value)->data);
+                                                                  for (GList* l = ((GList*)value)->next; l != NULL; l = l->next) {
+                                                                        printf("%s ", (char*)l->data);
+                                                                  }
+                                                                  printf("\n");
                                                             }
+                                                            else
+                                                                  for (GList* l = value; l != NULL; l = l->next) {
+                                                                        printf("Ligações: %s %s\n", (char *) key, (char *) l->data);
+                                                                  }
                                                       }
-                                                      for (GList* l = data->scopenote; l != NULL; l = l->next) {
-                                                            char* data = l->data;
-                                                            printf("Nota: %s\n", data);
-                                                      }
-                                                      printf("\n");
                                                 }
                                           }
             |
