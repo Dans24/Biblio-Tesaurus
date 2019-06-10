@@ -6,6 +6,7 @@
  GHashTable *linguas;
  GHashTable *description;
  GHashTable *externs; //deve ser interpretado como texto
+ GTree *conceitos;
  GList *relacoes;
  int yyerror(char *s);
  char *baselang;
@@ -23,6 +24,10 @@
  }    *Conceito;
  void printPostIndex(FILE* f);
  void printPreIndex(FILE* f);
+ void printHTML();
+ gboolean printConceito(gpointer key, gpointer value, gpointer data);
+ void printLigacao(FILE* page, gpointer key, gpointer value);
+ gint strcmpG(gconstpointer a, gconstpointer b);
 %}
 
 
@@ -42,59 +47,7 @@
 %%
       /*Axioma:*/
 thesaurus   : metadados  conceitos        {
-                                                //Código para escrever coisas;
-                                                //Conceitos é uma lista com Conceito
-                                                GHashTableIter iter;
-                                                gpointer key, value;
-                                                FILE * indexF;
-                                                indexF = fopen("index.html","w");
-                                                printPreIndex(indexF);
-                                                
-                                                g_hash_table_iter_init (&iter, linguas);
-                                                while (g_hash_table_iter_next (&iter, &key, &value)) {
-                                                      printf("%s %s\n", (char *) key, (char *) value);
-                                                }
-
-                                                for (GList* l = relacoes; l != NULL; l = l->next) {
-                                                      Pair data = (Pair) l->data;
-                                                      printf("%s %s\n", (char*) data->a1, (char*) data->a2);
-                                                }
-
-                                                for (GList* l = $2; l != NULL; l = l->next) {
-                                                      Conceito data = (Conceito) l->data;
-                                                      fprintf(indexF,"\n<option>%s</option>",data->termobase);
-                                                      char filepath[200] = {0}; strcat(filepath,data->termobase);strcat(filepath,".html");
-                                                      FILE* page = fopen(filepath,"w");
-                                                      
-                                                      fprintf(page,"<h1>%s</h1>",data->termobase);
-
-                                                      g_hash_table_iter_init (&iter, data->traducoes);
-                                                      while (g_hash_table_iter_next (&iter, &key, &value)) {
-                                                            char * keyName =  g_hash_table_lookup(description,key);
-                                                            if(keyName == NULL)
-                                                                  keyName = (char *) key;
-                                                            fprintf(page,"<p>Tradução: %s %s</p>\n", keyName, (char *)((GList*)value)->data);
-                                                      }
-                                                      g_hash_table_iter_init (&iter, data->ligacoes);
-                                                      while (g_hash_table_iter_next (&iter, &key, &value)) {
-                                                            char * keyName =  g_hash_table_lookup(description,key);
-                                                            if(keyName == NULL)
-                                                                  keyName = (char *) key;
-                                                            if(g_hash_table_contains(externs,key)){
-                                                                  fprintf(page,"<p>%s: %s",keyName, (char *)((GList*)value)->data);
-                                                                  for (GList* l = ((GList*)value)->next; l != NULL; l = l->next) {
-                                                                        fprintf(page," %s", (char*)l->data);
-                                                                  }
-                                                                  fprintf(page,"</p>\n");
-                                                            }
-                                                            else
-                                                                  for (GList* l = value; l != NULL; l = l->next) {
-                                                                        fprintf(page,"<p>Ligações: %s %s</p>\n", keyName, (char *) l->data);
-                                                                  }
-                                                      }
-                                                      fclose(page);
-                                                }
-                                                printPostIndex(indexF);
+                                                printHTML();
                                           }
             |
             ;
@@ -120,9 +73,9 @@ linguas     : STRING {g_hash_table_add(linguas,$1);} linguas
             |           {}
             ;
             
-conceitos   : conceito '\n' conceitos          {$$ = g_list_prepend($3,$1);}
-            | '\n' conceitos              {$$ = $2;}            
-            |                             {$$ = NULL;}            
+conceitos   : conceito '\n' conceitos     {g_tree_insert (conceitos, (gpointer) $1->termobase, (gpointer) $1);}
+            | '\n' conceitos              {}            
+            |                             {conceitos = g_tree_new (strcmpG);}            
             ;
 
 conceito    :     STRING '\n' ligacoes {
@@ -185,12 +138,100 @@ int yyerror(char *s){ fprintf(stderr,"Erro: %s at line %d: %s \n",s,yylineno,yyt
 
 void printPreIndex(FILE* f){
       fprintf(f,"<head><meta charset=\"utf-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"><link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\"><script src=\"https://code.jquery.com/jquery-1.10.2.js\"></script><title>Biblio-Thesarus</title></head><script>$( document ).ready(function() {$( \"#stuff\" ).change(function (){$(\"#frame\").attr(\"src\",$(this).val()+\".html\");});});</script>");
-      fprintf(f,"<div class=\"container\"><div><h1>Biblio-Thesarus</h1><select id=\"stuff\" class=\"form-control\" data-show-subtext=\"true\" data-live-search=\"true\">");
+      fprintf(f,"<div class=\"jumbotron\"><h1>Biblio-Thesarus</h1><select id=\"stuff\" class=\"form-control\" data-show-subtext=\"true\" data-live-search=\"true\"><option disabled selected value> -- Selecione uma palavra -- </option>");
 }
 
 void printPostIndex(FILE* f){
-      fprintf(f,"</select></div><br/><div class=\"embed-responsive embed-responsive-16by9\"><iframe id=\"frame\" class=\"embed-responsive-item\" src=\"\" allowfullscreen></iframe></div></div>");
+      fprintf(f,"</select></div><div class=\"container\"><br/><div class=\"embed-responsive embed-responsive-16by9\"><iframe id=\"frame\" class=\"embed-responsive-item\" src=\"\" allowfullscreen></iframe></div></div>");
       fclose(f);
+}
+
+void printHTML() {
+      GHashTableIter iter;
+      gpointer key, value;
+      FILE * indexF;
+      indexF = fopen("index.html","w");
+      printPreIndex(indexF);
+      
+      g_hash_table_iter_init (&iter, linguas);
+      while (g_hash_table_iter_next (&iter, &key, &value)) {
+            printf("%s %s\n", (char *) key, (char *) value);
+      }
+
+      g_tree_foreach(conceitos, printConceito, (gpointer) indexF);
+      printPostIndex(indexF);
+}
+
+gboolean printConceito(gpointer key, gpointer value, gpointer file) {
+      {
+            GHashTableIter iter;
+            Conceito data = (Conceito) value;
+            FILE* indexF = (FILE*) file;
+            fprintf(indexF,"\n<option>%s</option>",data->termobase);
+            char filepath[200] = {0}; strcat(filepath,data->termobase);strcat(filepath,".html");
+            FILE* page = fopen(filepath,"w");
+            fprintf(page,"<head><meta charset=\"utf-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"><link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\">");
+            
+            fprintf(page,"<h1>%s</h1>",data->termobase);
+
+            g_hash_table_iter_init (&iter, data->traducoes);
+            fprintf(page,"<h3>Traduções</h3>\n");
+            while (g_hash_table_iter_next (&iter, &key, &value)) {
+                  char * keyName =  g_hash_table_lookup(description,key);
+                  if(keyName == NULL)
+                        keyName = (char *) key;
+                  fprintf(page,"<p>%s: %s</p>\n", keyName, (char *)((GList*)value)->data);
+            }
+            fprintf(page,"<h3>Ligações</h3>\n");
+            for (GList* l = relacoes; l != NULL; l = l->next) {
+                  Pair keys = (Pair) l->data;
+                  fprintf(page,"<div class=\"row\">\n");
+                  fprintf(page,"<div class=\"col-6 border-right\">\n");
+                  printLigacao(page, keys->a1, g_hash_table_lookup(data->ligacoes, keys->a1));
+                  g_hash_table_remove (data->ligacoes, keys->a1);
+                  fprintf(page,"</div>\n");
+                  fprintf(page,"<div class=\"col-6 border-left\">\n");
+                  printLigacao(page, keys->a2, g_hash_table_lookup(data->ligacoes,keys->a2));
+                  g_hash_table_remove (data->ligacoes, keys->a2);
+                  fprintf(page,"</div>\n");
+                  fprintf(page,"</div>\n");
+            }
+            g_hash_table_iter_init (&iter, data->ligacoes);
+            while (g_hash_table_iter_next (&iter, &key, &value)) {
+                  printLigacao(page, key, value);
+            }
+            fclose(page);
+      }
+      return FALSE;
+}
+
+void printLigacao(FILE* page, gpointer key, gpointer value) {
+      char * keyName =  g_hash_table_lookup(description,key);
+      if(keyName == NULL)
+            keyName = (char *) key;
+      fprintf(page,"<h4>%s</h4>\n", keyName);
+      if(g_hash_table_contains(externs,key)){
+            fprintf(page,"<p>%s", (char *)((GList*)value)->data);
+            for (GList* l = ((GList*)value)->next; l != NULL; l = l->next) {
+                  fprintf(page," %s", (char*)l->data);
+            }
+            fprintf(page,"</p>\n");
+      }
+      else {
+            fprintf(page, "<ul>");
+            for (GList* l = value; l != NULL; l = l->next) {
+                  if(g_tree_lookup (conceitos, l->data)) {
+                        fprintf(page,"<li><a href=\"%s.html\">%s</a></li>\n", (char *) l->data, (char *) l->data);
+                  } else {
+                        fprintf(page,"<li>%s</li>\n", (char *) l->data);
+                  }
+            }
+            fprintf(page,"</ul>\n");
+      }
+}
+
+gint strcmpG(gconstpointer a, gconstpointer b) {
+      return strcmp((char*) a, (char*) b);
 }
 
 int main(){
