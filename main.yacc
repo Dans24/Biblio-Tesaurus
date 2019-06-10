@@ -31,7 +31,7 @@
 %}
 
 
-%token  HEAD STRING LING REL LANGUAGE EXTERN DESC BASELANG INV LINEBREAK;
+%token  STRING LANGUAGE EXTERN DESC BASELANG INV LINEBREAK;
 %union{ 
       char* s;
       GList *list;
@@ -40,7 +40,7 @@
       Conceito c;
       }
 
-%type <s> HEAD STRING LING REL 
+%type <s> STRING
 %type <list> termos conceitos note list     
 %type <par> ligacoes
 %type <c> conceito
