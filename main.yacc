@@ -137,7 +137,7 @@ int yyerror(char *s){ fprintf(stderr,"Erro: %s at line %d: %s \n",s,yylineno,yyt
 
 
 void printPreIndex(FILE* f){
-      fprintf(f,"<head><meta charset=\"utf-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"><link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\"><script src=\"https://code.jquery.com/jquery-1.10.2.js\"></script><title>Biblio-Thesarus</title></head><script>$( document ).ready(function() {$( \"#stuff\" ).change(function (){$(\"#frame\").attr(\"src\",$(this).val()+\".html\");});});</script>");
+      fprintf(f,"<head><meta charset=\"utf-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"><link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\"><script src=\"https://code.jquery.com/jquery-1.10.2.js\"></script><title>Biblio-Thesarus</title><script>$( document ).ready(function() {$( \"#stuff\" ).change(function (){$(\"#frame\").attr(\"src\",$(this).val()+\".html\");});});</script></head>");
       fprintf(f,"<div class=\"jumbotron\"><h1>Biblio-Thesarus");
       if(baselang) {
             gpointer baselangName = g_hash_table_lookup(description, (gpointer) baselang);
@@ -146,7 +146,8 @@ void printPreIndex(FILE* f){
             }
             fprintf(f, "<small> (%s)</small>", baselang);
       }
-      fprintf(f,"</h1><select id=\"stuff\" class=\"form-control\" data-show-subtext=\"true\" data-live-search=\"true\"><option disabled selected value> -- Selecione uma palavra -- </option>");}
+      fprintf(f,"</h1><select id=\"stuff\" class=\"form-control\" data-show-subtext=\"true\" data-live-search=\"true\"><option disabled selected value> -- Selecione uma palavra -- </option>");
+}
 
 void printPostIndex(FILE* f){
       fprintf(f,"</select></div><div class=\"container\"><br/><div class=\"embed-responsive embed-responsive-16by9\"><iframe id=\"frame\" class=\"embed-responsive-item\" src=\"\" allowfullscreen></iframe></div></div>");
@@ -154,10 +155,7 @@ void printPostIndex(FILE* f){
 }
 
 void printHTML() {
-      GHashTableIter iter;
-      gpointer key, value;
-      FILE * indexF;
-      indexF = fopen("index.html","w");
+      FILE * indexF = fopen("index.html","w");
       printPreIndex(indexF);
       g_tree_foreach(conceitos, printConceito, (gpointer) indexF);
       printPostIndex(indexF);
@@ -171,7 +169,7 @@ gboolean printConceito(gpointer key, gpointer value, gpointer file) {
             fprintf(indexF,"\n<option>%s</option>",data->termobase);
             char filepath[200] = {0}; strcat(filepath,data->termobase);strcat(filepath,".html");
             FILE* page = fopen(filepath,"w");
-            fprintf(page,"<head><meta charset=\"utf-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"><link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\">");
+            fprintf(page,"<head><meta charset=\"utf-8\" name=\"viewport\" content=\"width=device-width, initial-scale=1, shrink-to-fit=no\"><link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css\" integrity=\"sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm\" crossorigin=\"anonymous\"></head>");
             
             fprintf(page,"<h1>%s</h1>",data->termobase);
 
